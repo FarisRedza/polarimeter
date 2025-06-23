@@ -1,10 +1,8 @@
 import sys
 import os
-import threading
 import socket
 import typing
 import json
-import time
 
 sys.path.append(
     os.path.abspath(os.path.join(
@@ -17,7 +15,6 @@ import polarimeter.thorlabs_polarimeter as thorlabs_polarimeter
 server_host = '127.0.0.1'
 server_host = '137.195.89.222'
 server_port = 5003
-
 
 def send_request(
         host: str,
@@ -73,9 +70,7 @@ class Polarimeter(thorlabs_polarimeter.Polarimeter):
             self,
             host: str,
             port: int,
-            serial_number: str,
-            waveplate_rotation: thorlabs_polarimeter.Polarimeter.WaveplateRotation = thorlabs_polarimeter.Polarimeter.WaveplateRotation.ON,
-            averaging_mode: thorlabs_polarimeter.Polarimeter.AveragingMode = thorlabs_polarimeter.Polarimeter.AveragingMode.F1024
+            serial_number: str
     ) -> None:
         self.host = host
         self.port = port
