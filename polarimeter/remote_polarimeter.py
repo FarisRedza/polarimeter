@@ -1,16 +1,8 @@
-import sys
-import os
 import socket
 import struct
 
-sys.path.append(
-    os.path.abspath(os.path.join(
-        os.path.dirname(__file__),
-        os.path.pardir
-    ))
-)
-import polarimeter.thorlabs_polarimeter as thorlabs_polarimeter
-import polarimeter.remote_polarimeter_protocol as remote_polarimeter_protocol
+from . import thorlabs_polarimeter
+from . import remote_protocol
 
 server_host = '127.0.0.1'
 server_host = '137.195.89.222'
@@ -43,10 +35,10 @@ class Polarimeter(thorlabs_polarimeter.Polarimeter):
 
     def measure(self) -> thorlabs_polarimeter.RawData:
         self._send_command(
-            command=remote_polarimeter_protocol.Command.MEASURE_ONCE
+            command=remote_protocol.Command.MEASURE_ONCE
         )
         resp_type, payload = self._receive_response()
-        if resp_type == remote_polarimeter_protocol.Response.RAWDATA:
+        if resp_type == remote_protocol.Response.RAWDATA:
             return thorlabs_polarimeter.RawData.deserialise(
                 payload=payload
             )
@@ -61,10 +53,10 @@ class Polarimeter(thorlabs_polarimeter.Polarimeter):
             serial_number: str
     ) -> None:
         self._send_command(
-            command=remote_polarimeter_protocol.Command.LIST_DEVICES
+            command=remote_protocol.Command.LIST_DEVICES
         )
         resp_type, payload = self._receive_response()
-        if resp_type == remote_polarimeter_protocol.Response.DEVICE_INFO:
+        if resp_type == remote_protocol.Response.DEVICE_INFO:
             self.device_info=thorlabs_polarimeter.DeviceInfo.deserialise(
                 payload=payload
             )
@@ -73,7 +65,7 @@ class Polarimeter(thorlabs_polarimeter.Polarimeter):
 
     def _send_command(
             self,
-            command: remote_polarimeter_protocol.Command
+            command: remote_protocol.Command
         ) -> None:
         self._sock.sendall(struct.pack('I', command))
 

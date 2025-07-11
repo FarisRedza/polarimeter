@@ -1,17 +1,9 @@
-import sys
-import os
 import socket
 import threading
 import struct
 
-sys.path.append(
-    os.path.abspath(os.path.join(
-        os.path.dirname(__file__),
-        os.path.pardir
-    ))
-)
-import polarimeter.remote_polarimeter_protocol as remote_polarimeter_protocol
-import polarimeter.thorlabs_polarimeter as thorlabs_polarimeter
+from . import remote_protocol as remote_protocol
+from . import thorlabs_polarimeter
 
 def pack_status(message: str):
     b = message.encode()
@@ -34,22 +26,22 @@ def handle_client(
                     break
 
                 command = struct.unpack('I', cmd_data)[0]
-                match remote_polarimeter_protocol.Command(command):
-                    case remote_polarimeter_protocol.Command.LIST_DEVICES:
+                match remote_protocol.Command(command):
+                    case remote_protocol.Command.LIST_DEVICES:
                         payload = measurement_device.device_info.serialise()
                         header = struct.pack(
                             'IB',
                             len(payload) + 1,
-                            remote_polarimeter_protocol.Response.DEVICE_INFO
+                            remote_protocol.Response.DEVICE_INFO
                         )
                         connection.sendall(header + payload)
 
-                    case remote_polarimeter_protocol.Command.MEASURE_ONCE:
+                    case remote_protocol.Command.MEASURE_ONCE:
                         payload = measurement_device.measure().serialise()
                         header = struct.pack(
                             'IB',
                             len(payload) + 1,
-                            remote_polarimeter_protocol.Response.RAWDATA
+                            remote_protocol.Response.RAWDATA
                         )
                         connection.sendall(header + payload)
 
@@ -63,7 +55,7 @@ def handle_client(
                         header = struct.pack(
                             'IB',
                             len(payload) + 1,
-                            remote_polarimeter_protocol.Response.ERROR
+                            remote_protocol.Response.ERROR
                         )
                         connection.sendall(header + payload)
 

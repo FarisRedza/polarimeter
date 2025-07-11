@@ -1,5 +1,3 @@
-import sys
-import os
 import typing
 
 import gi
@@ -12,13 +10,7 @@ import matplotlib.figure
 import matplotlib.pyplot
 import numpy
 
-sys.path.append(
-    os.path.abspath(os.path.join(
-        os.path.dirname(__file__),
-        os.path.pardir
-    ))
-)
-import polarimeter.thorlabs_polarimeter as thorlabs_polarimeter
+from . import thorlabs_polarimeter
 
 class PolEllipseGroup(Adw.PreferencesGroup):
     def __init__(

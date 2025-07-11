@@ -1,0 +1,7 @@
+[project]
+name = "polarimeter"
+version = "0.1"
+dependencies = ["matplotlib","pyvisa-py"]
+
+[project.urls]
+"Homepage" = "https://github.com/FarisRedza/polarimeter"
