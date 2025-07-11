@@ -2,6 +2,9 @@
 `python3 -m venv .venv`
 `pip install -r requirements.txt`
 
+# Server
+`python3 -m polarimeter.remote_server`
+
 # GUI
 ## Linux
 `python3 -m venv .venv --system-site-packages`\
