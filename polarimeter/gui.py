@@ -21,7 +21,13 @@ class MainWindow(Adw.ApplicationWindow):
         self.set_content(content=main_box)
 
         ## header_bar
-        header_bar = Adw.HeaderBar()
+        try:
+            header_bar = Gtk.HeaderBar(
+                use_native_controls=True
+            )
+        except:
+            header_bar = Gtk.HeaderBar()
+
         main_box.append(child=header_bar)
 
         ### polarimeter box
