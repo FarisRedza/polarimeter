@@ -4,6 +4,7 @@ import typing
 import pprint
 import enum
 import struct
+import time
 
 import pyvisa
 
@@ -194,20 +195,20 @@ class RawData:
     dop: degree of polarisation
     ptotal: total optical power
     '''
-    wavelength: str
-    revs: str
-    timestamp: str
-    paxOpMode: str
-    paxFlags: str
-    paxTIARange: str
-    adcMin: str
-    adcMax: str
-    revTime: str
-    misAdj: str
-    theta: str
-    eta: str
-    dop: str
-    ptotal: str
+    wavelength: str = '0'
+    revs: str = '0'
+    timestamp: str = '0'
+    paxOpMode: str = '0'
+    paxFlags: str = '0'
+    paxTIARange: str = '0'
+    adcMin: str = '0'
+    adcMax: str = '0'
+    revTime: str = '0'
+    misAdj: str = '0'
+    theta: str = '0'
+    eta: str = '0'
+    dop: str = '0'
+    ptotal: str = '0'
 
     def serialise(self) -> bytes:
         def encode_string(s: str):
@@ -287,33 +288,35 @@ class Data:
         dop = float(raw_data.dop)
         ptotal = float(raw_data.ptotal)
 
-        S0 = ptotal
-        S1 = ptotal * math.cos(2*theta) * math.cos(2*eta)
-        S2 = ptotal * math.sin(2*theta) * math.cos(2*eta)
-        S3 = ptotal * math.sin(2*eta)
-
-        return cls(
-            timestamp=timestamp,
-            wavelength=wavelength,
-            azimuth=Degrees(math.degrees(theta)),
-            ellipticity=Degrees(math.degrees(eta)),
-            degree_of_polarisation=Percent(dop * 100),
-            degree_of_linear_polarisation=Percent(math.sqrt(S1**2 + S2**2)/S0 * 100),
-            degree_of_circular_polarisation=Percent(abs(S3)/S0 * 100),
-            power=decibel_milliwatts(Watts(ptotal)),
-            power_polarised=decibel_milliwatts(Watts(dop*ptotal)),
-            power_unpolarised=decibel_milliwatts(Watts((1-dop)*ptotal)),
-            normalised_s1=S1/S0,
-            normalised_s2=S2/S0,
-            normalised_s3=S3/S0,
-            S0=Watts(S0),
-            S1=Watts(S1),
-            S2=Watts(S2),
-            S3=Watts(S3),
-            power_split_ratio=math.tan(eta)**2,
-            phase_difference=Degrees(math.degrees(math.atan2(S3,S2))),
-            circularity=Percent(abs(math.tan(eta)) * 100)
-        )
+        try:
+            S0 = ptotal
+            S1 = ptotal * math.cos(2*theta) * math.cos(2*eta)
+            S2 = ptotal * math.sin(2*theta) * math.cos(2*eta)
+            S3 = ptotal * math.sin(2*eta)
+            return cls(
+                timestamp=timestamp,
+                wavelength=wavelength,
+                azimuth=Degrees(math.degrees(theta)),
+                ellipticity=Degrees(math.degrees(eta)),
+                degree_of_polarisation=Percent(dop * 100),
+                degree_of_linear_polarisation=Percent(math.sqrt(S1**2 + S2**2)/S0 * 100),
+                degree_of_circular_polarisation=Percent(abs(S3)/S0 * 100),
+                power=decibel_milliwatts(Watts(ptotal)),
+                power_polarised=decibel_milliwatts(Watts(dop*ptotal)),
+                power_unpolarised=decibel_milliwatts(Watts((1-dop)*ptotal)),
+                normalised_s1=S1/S0,
+                normalised_s2=S2/S0,
+                normalised_s3=S3/S0,
+                S0=Watts(S0),
+                S1=Watts(S1),
+                S2=Watts(S2),
+                S3=Watts(S3),
+                power_split_ratio=math.tan(eta)**2,
+                phase_difference=Degrees(math.degrees(math.atan2(S3,S2))),
+                circularity=Percent(abs(math.tan(eta)) * 100)
+            )
+        except:
+            return cls()
 
 class Polarimeter(SCPIDevice):
     class WaveplateRotation(enum.Enum):
@@ -338,8 +341,8 @@ class Polarimeter(SCPIDevice):
 
     def __init__(
             self,
-            id: str | None = '1313:8031',
-            serial_number: str | None = None,
+            serial_number: str,
+            id: str = '1313:8031',
             waveplate_rotation: WaveplateRotation = WaveplateRotation.ON,
             averaging_mode: AveragingMode = AveragingMode.F1024
         ) -> None:
@@ -351,28 +354,43 @@ class Polarimeter(SCPIDevice):
         self._sense_calculate_mode(mode=averaging_mode.value)
 
     def disconnect(self) -> None:
-        self._input_rotation_state(state=self.WaveplateRotation.OFF.value)
-        super().disconnect()
+        if self.is_connected():
+            self._input_rotation_state(state=self.WaveplateRotation.OFF.value)
+            super().disconnect()
+
+    def __del__(self) -> None:
+        self.disconnect()
+
+    def is_connected(self) -> bool:
+        try:
+            self._identification_query()
+        except:
+            return False
+        else:
+            return True
 
     def measure(self) -> RawData:
-        wavelength = self._sense_correction_wavelength_query().removesuffix('\n')
-        response = self._sense_data_latest().removesuffix('\n').split(',')
-        return RawData(
-            wavelength=wavelength,
-            revs=response[0],
-            timestamp=response[1],
-            paxOpMode=response[2],
-            paxFlags=response[3],
-            paxTIARange=response[4],
-            adcMin=response[5],
-            adcMax=response[6],
-            revTime=response[7],
-            misAdj=response[8],
-            theta=response[9],
-            eta=response[10],
-            dop=response[11],
-            ptotal=response[12]
-        )
+        if self.is_connected():
+            wavelength = self._sense_correction_wavelength_query().removesuffix('\n')
+            response = self._sense_data_latest().removesuffix('\n').split(',')
+            return RawData(
+                wavelength=wavelength,
+                revs=response[0],
+                timestamp=response[1],
+                paxOpMode=response[2],
+                paxFlags=response[3],
+                paxTIARange=response[4],
+                adcMin=response[5],
+                adcMax=response[6],
+                revTime=response[7],
+                misAdj=response[8],
+                theta=response[9],
+                eta=response[10],
+                dop=response[11],
+                ptotal=response[12]
+            )
+        else:
+            return RawData()
     
     def set_wavelength(self, wavelength: Metres) -> None:
         self._sense_correction_wavelength(wavelength=str(wavelength))
@@ -460,7 +478,9 @@ class Polarimeter(SCPIDevice):
 
 
 if __name__ == '__main__':
-    pax = Polarimeter(id='1313:8031', serial_number='M00910360')
+    pax = Polarimeter(serial_number='M00910360')
+    print(pax.is_connected())
     pprint.pprint(pax.device_info)
     print(Data().from_raw_data(raw_data=pax.measure()))
-    
+    time.sleep(5)
+    del pax

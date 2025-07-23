@@ -1,4 +1,6 @@
 import sys
+import os
+import signal
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -14,11 +16,11 @@ class MainWindow(Adw.ApplicationWindow):
         self.set_title(title='Polarisation Viewer')
         self.set_default_size(width=600, height=500)
         self.set_size_request(width=450, height=150)
-        self.connect("close-request", self.on_close_request)
+        self.connect('close-request', self.on_close_request)
 
         # main box
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.set_content(content=main_box)
+        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.set_content(content=self.main_box)
 
         ## header_bar
         try:
@@ -28,18 +30,17 @@ class MainWindow(Adw.ApplicationWindow):
         except:
             header_bar = Gtk.HeaderBar()
 
-        main_box.append(child=header_bar)
+        self.main_box.append(child=header_bar)
 
         ### polarimeter box
-        self.polarimeter = thorlabs_polarimeter.Polarimeter(
-            serial_number='M00910360'
-        )
         try:
             self.polarimeter_box = gui_widget.PolarimeterBox(
-                polarimeter=self.polarimeter
+                polarimeter=thorlabs_polarimeter.Polarimeter(
+                    serial_number='M00910360'
+                )
             )
         except:
-            main_box.append(
+            self.main_box.append(
                 child=Gtk.Label(
                     label='No polarimeter found',
                     valign=Gtk.Align.CENTER,
@@ -47,13 +48,10 @@ class MainWindow(Adw.ApplicationWindow):
                 )
             )
         else:
-            main_box.append(child=self.polarimeter_box)
+            self.main_box.append(child=self.polarimeter_box)
 
     def on_close_request(self, window: Adw.ApplicationWindow) -> bool:
-        try:
-            self.polarimeter_box.polarimeter.disconnect()
-        except Exception as e:
-            print('Error: Polarimeter already disconnected')
+        os.kill(os.getpid(), signal.SIGINT)
         return False
 
 class App(Adw.Application):
@@ -70,5 +68,8 @@ if __name__ == '__main__':
     try:
         app.run(sys.argv)
     except Exception as e:
-        app.win.polarimeter_box.polarimeter.disconnect()
         print('App crashed with an exception:', e)
+    except KeyboardInterrupt:
+        app.win.polarimeter_box._event.set()
+        app.win.polarimeter_box._measurement_thread.join()
+        app.win.polarimeter_box.polarimeter.disconnect()

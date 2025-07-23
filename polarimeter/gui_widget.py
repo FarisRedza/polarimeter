@@ -1,4 +1,6 @@
 import typing
+import time
+import threading
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -684,14 +686,22 @@ class PolarimeterBox(Gtk.Box):
             polarimeter: thorlabs_polarimeter.Polarimeter
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
-
         self.polarimeter = polarimeter
-        try:
-            self.data = thorlabs_polarimeter.Data().from_raw_data(
-                raw_data=self.polarimeter.measure()
-            )
-        except:
-            self.data = thorlabs_polarimeter.Data()
+        self._measurement_rate = 0.1
+        self._event = threading.Event()
+        self._raw_data_container = [thorlabs_polarimeter.RawData()]
+        self._measurement_thread = threading.Thread(
+            target=self._measure,
+            args=(self,)
+        )
+        self._measurement_thread.start()
+
+        # try:
+        #     self.data = thorlabs_polarimeter.Data().from_raw_data(
+        #         raw_data=self.polarimeter.measure()
+        #     )
+        # except:
+        self.data = thorlabs_polarimeter.Data()
         self.enable_polarimeter = True
 
         self.plot_box = ColumnOne(
@@ -717,6 +727,14 @@ class PolarimeterBox(Gtk.Box):
             interval=self.poling_interval,
             function=self.update_from_polarimeter
         )
+
+    def _measure(self, _) -> None:
+        while True:
+            for i in range(len(self._raw_data_container)):
+                self._raw_data_container[i] = self.polarimeter.measure()
+            if self._event.is_set():
+                break
+            time.sleep(self._measurement_rate)
 
     def set_enable_polarimeter(self, value: bool) -> None:
         self.enable_polarimeter = value
@@ -748,7 +766,8 @@ class PolarimeterBox(Gtk.Box):
     def update_from_polarimeter(self) -> bool:
         if self.enable_polarimeter == True:
             self.data = thorlabs_polarimeter.Data().from_raw_data(
-                raw_data=self.polarimeter.measure()
+                # raw_data=self.polarimeter.measure()
+                raw_data=self._raw_data_container[0]
             )
             self.set_polarimeter_data()
         return True
