@@ -63,12 +63,13 @@ class DeviceInfo:
 class SCPIDevice:
     def __init__(
             self,
-            id: str | None = None,
-            serial_number: str | None = None
+            id: str,
+            serial_number: str
     ) -> None:
         if id and serial_number:
             id_parts = id.split(':')
-            resource_name=f'USB0::0x{id_parts[0]}::0x{id_parts[1]}::{serial_number}::0::INSTR'
+            # resource_name=f'USB0::{hex(int(id_parts[0]))}::{hex(int(id_parts[1]))}::{serial_number}::0::INSTR'
+            resource_name=f'USB0::{id_parts[0]}::{id_parts[1]}::{serial_number}::0::INSTR'
         else:
             raise NameError('Device not found')
 
@@ -342,7 +343,7 @@ class Polarimeter(SCPIDevice):
     def __init__(
             self,
             serial_number: str,
-            id: str = '1313:8031',
+            id: str = '4883:32817',
             waveplate_rotation: WaveplateRotation = WaveplateRotation.ON,
             averaging_mode: AveragingMode = AveragingMode.F1024
         ) -> None:
@@ -476,11 +477,38 @@ class Polarimeter(SCPIDevice):
     def _input_rotation_velocity_limits(self) -> str:
         return str(self._instrument.query('INP:ROT:VEL:LIM?'))
 
+def list_devices() -> list[SCPIDevice]:
+    devices = []
+    resources = pyvisa.ResourceManager().list_resources()
+    for r in resources:
+        r_parts = r.split('::')
+        id = ':'.join([r_parts[1],r_parts[2]])
+        serial_number = r_parts[3]
+        
+        match id:
+            case '4883:32817':
+                devices.append(
+                    Polarimeter(
+                        serial_number=serial_number,
+                        waveplate_rotation=Polarimeter.WaveplateRotation.OFF
+                    )
+                )
+            case _:
+                devices.append(
+                    SCPIDevice(
+                        id=id,
+                        serial_number=serial_number
+                    )
+                )
+                pass
+    return devices
 
 if __name__ == '__main__':
-    pax = Polarimeter(serial_number='M00910360')
-    print(pax.is_connected())
-    pprint.pprint(pax.device_info)
-    print(Data().from_raw_data(raw_data=pax.measure()))
-    time.sleep(5)
-    del pax
+    devices = list_devices()
+    for d in devices:
+        print(d.device_info)
+        d.disconnect()
+    # print(pax.is_connected())
+    # pprint.pprint(pax.device_info)
+    # print(Data().from_raw_data(raw_data=pax.measure()))
+    # time.sleep(5)
