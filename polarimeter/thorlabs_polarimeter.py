@@ -479,16 +479,14 @@ def list_devices() -> list[SCPIDevice]:
     devices = []
     resources = pyvisa.ResourceManager().list_resources()
     for r in resources:
-        r_parts = r.split('::')
-        id = ':'.join([r_parts[1],r_parts[2]])
-        serial_number = r_parts[3]
-        
         try:
+            r_parts = r.split('::')
+            id = ':'.join([r_parts[1],r_parts[2]])
+            serial_number = r_parts[3]
             match id:
                 case '4883:32817':
                     device = Polarimeter(
                         serial_number=serial_number,
-                        # waveplate_rotation=Polarimeter.WaveplateRotation.OFF
                     )
                 case _:
                     device = SCPIDevice(

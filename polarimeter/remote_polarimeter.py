@@ -1,6 +1,5 @@
 import socket
 import struct
-import typing
 
 from . import thorlabs_polarimeter
 from . import remote_protocol
