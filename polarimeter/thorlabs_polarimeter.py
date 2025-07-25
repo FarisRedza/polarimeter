@@ -1,10 +1,8 @@
 import math
 import dataclasses
 import typing
-import pprint
 import enum
 import struct
-import time
 
 import pyvisa
 
@@ -68,7 +66,6 @@ class SCPIDevice:
     ) -> None:
         if id and serial_number:
             id_parts = id.split(':')
-            # resource_name=f'USB0::{hex(int(id_parts[0]))}::{hex(int(id_parts[1]))}::{serial_number}::0::INSTR'
             resource_name=f'USB0::{id_parts[0]}::{id_parts[1]}::{serial_number}::0::INSTR'
         else:
             raise NameError('Device not found')
@@ -344,23 +341,18 @@ class Polarimeter(SCPIDevice):
             self,
             serial_number: str,
             id: str = '4883:32817',
-            waveplate_rotation: WaveplateRotation = WaveplateRotation.ON,
             averaging_mode: AveragingMode = AveragingMode.F1024
         ) -> None:
         super().__init__(
             id=id,
             serial_number=serial_number
         )
-        self._input_rotation_state(state=waveplate_rotation.value)
         self._sense_calculate_mode(mode=averaging_mode.value)
 
     def disconnect(self) -> None:
         if self.is_connected():
             self._input_rotation_state(state=self.WaveplateRotation.OFF.value)
             super().disconnect()
-
-    def __del__(self) -> None:
-        self.disconnect()
 
     def is_connected(self) -> bool:
         try:
@@ -372,6 +364,12 @@ class Polarimeter(SCPIDevice):
 
     def measure(self) -> RawData:
         if self.is_connected():
+            waveplate_rotation = self.WaveplateRotation(
+                value=self._input_rotation_state_query().removesuffix('\n')
+            )
+            if waveplate_rotation is not self.WaveplateRotation.ON:
+                self._input_rotation_state(state=self.WaveplateRotation.ON.value)
+
             wavelength = self._sense_correction_wavelength_query().removesuffix('\n')
             response = self._sense_data_latest().removesuffix('\n').split(',')
             return RawData(
@@ -485,30 +483,21 @@ def list_devices() -> list[SCPIDevice]:
         id = ':'.join([r_parts[1],r_parts[2]])
         serial_number = r_parts[3]
         
-        match id:
-            case '4883:32817':
-                devices.append(
-                    Polarimeter(
+        try:
+            match id:
+                case '4883:32817':
+                    device = Polarimeter(
                         serial_number=serial_number,
-                        waveplate_rotation=Polarimeter.WaveplateRotation.OFF
+                        # waveplate_rotation=Polarimeter.WaveplateRotation.OFF
                     )
-                )
-            case _:
-                devices.append(
-                    SCPIDevice(
+                case _:
+                    device = SCPIDevice(
                         id=id,
                         serial_number=serial_number
                     )
-                )
-                pass
-    return devices
+        except:
+            pass
+        else:
+            devices.append(device)
 
-if __name__ == '__main__':
-    devices = list_devices()
-    for d in devices:
-        print(d.device_info)
-        d.disconnect()
-    # print(pax.is_connected())
-    # pprint.pprint(pax.device_info)
-    # print(Data().from_raw_data(raw_data=pax.measure()))
-    # time.sleep(5)
+    return devices

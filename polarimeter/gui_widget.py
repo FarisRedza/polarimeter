@@ -530,7 +530,6 @@ class DeviceSettingsGroup(Adw.PreferencesGroup):
             get_wavelegnth_callback: typing.Callable,
             set_poling_interval_callback: typing.Callable,
             get_poling_interval_callback: typing.Callable,
-            get_data_callback: typing.Callable
     ) -> None:
         super().__init__(title='Settings')
         self.set_enable_polarimeter = set_enable_polarimeter_callback
@@ -561,7 +560,7 @@ class DeviceSettingsGroup(Adw.PreferencesGroup):
         wavelength_row = Adw.ActionRow(title='Wavelength')
         self.add(child=wavelength_row)
         wavelength_entry = Gtk.Entry(
-            text=float(get_data_callback().wavelength) * 1e9,
+            text=self.get_wavelength() * 1e9,
             placeholder_text='nm',
             valign=Gtk.Align.CENTER
         )
@@ -671,7 +670,6 @@ class ColumnTwo(Adw.PreferencesPage):
             get_wavelegnth_callback=get_wavelength_callback,
             set_poling_interval_callback=set_poling_interval_callback,
             get_poling_interval_callback=get_poling_interval_callback,
-            get_data_callback=get_data_callback
         )
         self.add(group=self.device_settings_group)
 
@@ -696,11 +694,6 @@ class PolarimeterBox(Gtk.Box):
         )
         self._measurement_thread.start()
 
-        # try:
-        #     self.data = thorlabs_polarimeter.Data().from_raw_data(
-        #         raw_data=self.polarimeter.measure()
-        #     )
-        # except:
         self.data = thorlabs_polarimeter.Data()
         self.enable_polarimeter = True
 
@@ -766,7 +759,6 @@ class PolarimeterBox(Gtk.Box):
     def update_from_polarimeter(self) -> bool:
         if self.enable_polarimeter == True:
             self.data = thorlabs_polarimeter.Data().from_raw_data(
-                # raw_data=self.polarimeter.measure()
                 raw_data=self._raw_data_container[0]
             )
             self.set_polarimeter_data()
