@@ -93,7 +93,7 @@ def handle_client(
                     if not device:
                         send_message(
                             sock=sock,
-                            message=f'Motor {serial_number} not found',
+                            message=f'Device {serial_number} not found',
                             response_id=remote_protocol.Response.ERROR
                         )
                         continue
