@@ -1,3 +1,9 @@
+# Polarimeter
+<img src='./data/screenshots/start_page.png' height='300'>
+<img src='./data/screenshots/device_page.png' height='300'>
+
+Control Thorlabs polarimeters with a GUI. Supports both locally connected devices and remote devices with an included server script.
+
 # Setup
 `python3 -m venv .venv`\
 `source .venv/bin/activate`\
@@ -35,5 +41,4 @@ Installing the dependencies using homebrew also installs Python 3.13. Apple's co
 `pacman -S mingw-w64-ucrt-x86_64-libadwaita mingw-w64-ucrt-x86_64-python3-gobject mingw-w64-ucrt-x86_64-python3-matplotlib`
 
 ## Usage
-`python3 -m polarimeter.gui` for local polarimeter\
-`python3 -m polarimeter.remote_gui` for remote polarimeter
+`python3 -m polarimeter.gui` for local polarimeter

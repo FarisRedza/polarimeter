@@ -39,7 +39,7 @@ class DeviceListGroup(Adw.PreferencesGroup):
             for d in devices_infos:
                 device_row = Adw.ActionRow(
                     title=d.manufacturer,
-                    subtitle=d.serial_number
+                    subtitle=f'Serial number: {d.serial_number}'
                 )
                 self.add(child=device_row)
                 connect_device_button = Gtk.Button(
@@ -157,7 +157,6 @@ class MainWindow(Adw.ApplicationWindow):
             )
         except:
             header_bar = Gtk.HeaderBar()
-
         main_box.append(child=header_bar)
 
         self.main_stack = Gtk.Stack(

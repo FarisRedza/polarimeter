@@ -1,9 +1,23 @@
 import socket
 import threading
 import struct
+import enum
 
-from . import remote_protocol as remote_protocol
 from . import thorlabs_polarimeter
+
+class Command(enum.IntEnum):
+    LIST_DEVICES = 1
+    DEVICE_INFO = 2
+    SET_WAVELENGTH = 3
+    SET_WAVEPLATE_ROTATION = 4
+    MEASURE = 5
+
+class Response(enum.IntEnum):
+    ERROR = 0
+    LIST_DEVICES = 1
+    DEVICE_INFO = 2
+    STATUS = 3
+    RAWDATA = 4
 
 def recvall(size: int, sock: socket.socket) -> bytes:
     data = bytearray()
@@ -16,12 +30,12 @@ def recvall(size: int, sock: socket.socket) -> bytes:
 
 def receive_command(
         sock: socket.socket
-) -> tuple[remote_protocol.Command, list]:
+) -> tuple[Command, list]:
     header = recvall(size=8, sock=sock)
     command_id, num_args = struct.unpack('II', header)
 
     try:
-        command = remote_protocol.Command(command_id)
+        command = Command(command_id)
     except ValueError:
         raise ValueError(f'Invalid command ID: {command_id}')
 
@@ -36,7 +50,7 @@ def receive_command(
 def send_message(
         sock: socket.socket,
         message: str,
-        response_id: remote_protocol.Response
+        response_id: Response
 ) -> None:
     payload = struct.pack(
         f'I{len(message)}s',
@@ -53,7 +67,7 @@ def send_message(
 def send_payload(
         sock: socket.socket,
         payload: bytes,
-        response_id: remote_protocol.Response
+        response_id: Response
 ) -> None:
     header = struct.pack('IB', len(payload) +1, response_id)
     sock.sendall(header + payload)
@@ -71,7 +85,7 @@ def handle_client(
                     print(f'[{address}] Disconnected: {e}')
                     break
 
-                if command == remote_protocol.Command.LIST_DEVICES:
+                if command == Command.LIST_DEVICES:
                     dev_infos = [dev.device_info.serialise() for dev in devices]
                     payload = struct.pack('I', len(dev_infos))
 
@@ -81,7 +95,7 @@ def handle_client(
                     send_payload(
                         sock=sock,
                         payload=payload,
-                        response_id=remote_protocol.Response.LIST_DEVICES
+                        response_id=Response.LIST_DEVICES
                     )
                 
                 elif args:
@@ -94,24 +108,24 @@ def handle_client(
                         send_message(
                             sock=sock,
                             message=f'Device {serial_number} not found',
-                            response_id=remote_protocol.Response.ERROR
+                            response_id=Response.ERROR
                         )
                         continue
 
                     match command:
-                        case remote_protocol.Command.DEVICE_INFO:
+                        case Command.DEVICE_INFO:
                             send_payload(
                                 sock=sock,
                                 payload=device.device_info.serialise(),
-                                response_id=remote_protocol.Response.DEVICE_INFO
+                                response_id=Response.DEVICE_INFO
                             )
 
-                        case remote_protocol.Command.SET_WAVELENGTH:
+                        case Command.SET_WAVELENGTH:
                             if len(args) < 2:
                                 send_message(
                                     sock=sock,
                                     message='No wavelength provided',
-                                    response_id=remote_protocol.Response.ERROR
+                                    response_id=Response.ERROR
                                 )
                                 continue
                             try:
@@ -120,22 +134,22 @@ def handle_client(
                                 send_message(
                                     sock=sock,
                                     message=f'Device {serial_number} wavelength set to {wavelength}',
-                                    response_id=remote_protocol.Response.STATUS
+                                    response_id=Response.STATUS
                                 )
                                 print(wavelength)
                             except Exception as e:
                                 send_message(
                                     sock=sock,
                                     message=str(e),
-                                    response_id=remote_protocol.Response.ERROR
+                                    response_id=Response.ERROR
                                 )
 
-                        case remote_protocol.Command.SET_WAVEPLATE_ROTATION:
+                        case Command.SET_WAVEPLATE_ROTATION:
                             if len(args) < 2:
                                 send_message(
                                     sock=sock,
                                     message='No value for waveplate rotation provided',
-                                    response_id=remote_protocol.Response.ERROR
+                                    response_id=Response.ERROR
                                 )
                                 continue
                             try:
@@ -144,34 +158,34 @@ def handle_client(
                                 send_message(
                                     sock=sock,
                                     message=f'Device {serial_number} waveplate rotation {waveplate_rotation.name}',
-                                    response_id=remote_protocol.Response.STATUS
+                                    response_id=Response.STATUS
                                 )
                             except Exception as e:
                                 send_message(
                                     sock=sock,
                                     message=str(e),
-                                    response_id=remote_protocol.Response.ERROR
+                                    response_id=Response.ERROR
                                 )
 
-                        case remote_protocol.Command.MEASURE:
+                        case Command.MEASURE:
                             send_payload(
                                 sock=sock,
                                 payload=device.measure().serialise(),
-                                response_id=remote_protocol.Response.RAWDATA
+                                response_id=Response.RAWDATA
                             )
 
                         case _:
                             send_message(
                                 sock=sock,
                                 message=f'Unsupported command: {command}',
-                                response_id=remote_protocol.Response.ERROR
+                                response_id=Response.ERROR
                             )
                     
                 else:
                     send_message(
                         sock=sock,
                         message=f'No arguments provided',
-                        response_id=remote_protocol.Response.ERROR    
+                        response_id=Response.ERROR    
                     )
 
         except Exception as e:

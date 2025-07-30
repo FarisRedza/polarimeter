@@ -2,11 +2,11 @@ import socket
 import struct
 
 from . import thorlabs_polarimeter
-from . import remote_protocol
+from . import remote_server
 
 def send_command(
         sock: socket.socket,
-        command: remote_protocol.Command,
+        command: remote_server.Command,
         args : tuple | None = None
 ) -> None:
     encoded_args = [
@@ -32,7 +32,7 @@ def receive_response(sock: socket.socket) -> tuple[int, bytes]:
     header = recvall(size=5, sock=sock)
     total_len, response_id = struct.unpack('IB', header)
     try:
-        response = remote_protocol.Response(response_id)
+        response = remote_server.Response(response_id)
     except ValueError:
         raise ValueError(f'Invalid response ID: {response_id}')
     else:
@@ -61,12 +61,12 @@ def list_device_info(
 
     send_command(
         sock=sock,
-        command=remote_protocol.Command.LIST_DEVICES
+        command=remote_server.Command.LIST_DEVICES
     )
     response, payload = receive_response(sock=sock)
     
     device_infos = []
-    if response == remote_protocol.Response.LIST_DEVICES:
+    if response == remote_server.Response.LIST_DEVICES:
         (num_devices,) = struct.unpack('I', payload[:4])
         offset = 4
         for _ in range(num_devices):
@@ -115,11 +115,11 @@ class RemotePolarimeter(thorlabs_polarimeter.Polarimeter):
     def set_wavelength(self, wavelength: thorlabs_polarimeter.Metres) -> None:
         send_command(
             sock=self._sock,
-            command=remote_protocol.Command.SET_WAVELENGTH,
+            command=remote_server.Command.SET_WAVELENGTH,
             args=(self.device_info.serial_number, wavelength)
         )
         payload = self._handle_response(
-            expected_response_id=remote_protocol.Response.STATUS
+            expected_response_id=remote_server.Response.STATUS
         )
         msg_len, = struct.unpack('I', payload[:4])
         status_msg = payload[4:4 + msg_len].decode(encoding='utf-8')
@@ -127,11 +127,11 @@ class RemotePolarimeter(thorlabs_polarimeter.Polarimeter):
     def measure(self) -> thorlabs_polarimeter.RawData:
         send_command(
             sock=self._sock,
-            command=remote_protocol.Command.MEASURE,
+            command=remote_server.Command.MEASURE,
             args=(self.device_info.serial_number,)
         )
         payload = self._handle_response(
-            expected_response_id=remote_protocol.Response.RAWDATA,
+            expected_response_id=remote_server.Response.RAWDATA,
         )
         return thorlabs_polarimeter.RawData.deserialise(
             payload=payload
@@ -139,7 +139,7 @@ class RemotePolarimeter(thorlabs_polarimeter.Polarimeter):
 
     def _handle_response(
             self,
-            expected_response_id: remote_protocol.Response
+            expected_response_id: remote_server.Response
     ):
         response, payload = receive_response(self._sock)
 
@@ -147,7 +147,7 @@ class RemotePolarimeter(thorlabs_polarimeter.Polarimeter):
             case r if r == expected_response_id:
                 return payload
             
-            case remote_protocol.Response.ERROR:
+            case remote_server.Response.ERROR:
                 error_msg = payload.decode(encoding='utf-8')
                 raise RuntimeError(f'Server error: {error_msg}')
             
@@ -160,11 +160,11 @@ class RemotePolarimeter(thorlabs_polarimeter.Polarimeter):
     ) -> None:
         send_command(
             sock=self._sock,
-            command=remote_protocol.Command.DEVICE_INFO,
+            command=remote_server.Command.DEVICE_INFO,
             args=(serial_number,)
         )
         payload = self._handle_response(
-            expected_response_id=remote_protocol.Response.DEVICE_INFO,
+            expected_response_id=remote_server.Response.DEVICE_INFO,
         )
         self.device_info = thorlabs_polarimeter.DeviceInfo.deserialise(
             payload=payload
@@ -173,11 +173,11 @@ class RemotePolarimeter(thorlabs_polarimeter.Polarimeter):
     def _input_rotation_state(self, state: str) -> None:
         send_command(
             sock=self._sock,
-            command=remote_protocol.Command.SET_WAVEPLATE_ROTATION,
+            command=remote_server.Command.SET_WAVEPLATE_ROTATION,
             args=(self.device_info.serial_number, state)
         )
         payload = self._handle_response(
-            expected_response_id=remote_protocol.Response.STATUS
+            expected_response_id=remote_server.Response.STATUS
         )
         msg_len, = struct.unpack('I', payload[:4])
         status_msg = payload[4:4 + msg_len].decode(encoding='utf-8')
