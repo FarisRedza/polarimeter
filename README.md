@@ -1,3 +1,9 @@
+# Polarimeter
+<img src='./data/screenshots/start_page.png' height='300'>
+<img src='./data/screenshots/device_page.png' height='300'>
+
+Control Thorlabs polarimeters with a GUI. Supports both locally connected devices and remote devices with an included server script.
+
 # Setup
 `python3 -m venv .venv`\
 `source .venv/bin/activate`\
@@ -17,10 +23,10 @@ Use `--system-site-packages` method if you want to allow the python environment 
 `pip install -r requirements.txt`\
 
 ### Using venv pygobject
-`sudo apt install python3-venv build-essential libcairo2-dev python3-dev libgirepository1.0-dev`\
+`sudo apt install python3-venv build-essential libcairo2-dev python3-dev libgirepository1.0-dev` (can use `libgirepository-2.0-dev` on Ubuntu 24.04 and later)\
 `python3 -m venv .venv`\
 `source .venv/bin/activate`\
-`pip install -r requirements.txt pygobject==3.50.1`
+`pip install -r requirements.txt pygobject==3.50.1` (can use newer `pygobject` on Ubuntu 24.04 and later)
 
 ## MacOS (Tested on macOS 15.5 Sequoia)
 Installing the dependencies using homebrew also installs Python 3.13. Apple's command line developer tools installs Python 3.9, which is too old. This was tested using the homebrew Python version
@@ -35,5 +41,4 @@ Installing the dependencies using homebrew also installs Python 3.13. Apple's co
 `pacman -S mingw-w64-ucrt-x86_64-libadwaita mingw-w64-ucrt-x86_64-python3-gobject mingw-w64-ucrt-x86_64-python3-matplotlib`
 
 ## Usage
-`python3 -m polarimeter.gui` for local polarimeter\
-`python3 -m polarimeter.remote_gui` for remote polarimeter
+`python3 -m polarimeter.gui` for local polarimeter
