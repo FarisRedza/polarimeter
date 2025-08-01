@@ -481,7 +481,14 @@ def list_devices() -> list[SCPIDevice]:
     for r in resources:
         try:
             r_parts = r.split('::')
-            id = ':'.join([r_parts[1],r_parts[2]])
+            if '0x' in r_parts[1]:
+                id_1 = str(int(r_parts[1], 16))
+                id_2 = str(int(r_parts[2], 16))
+            else:
+                id_1 = r_parts[1]
+                id_2 = r_parts[2]
+            id = ':'.join([id_1, id_2])
+            print(id)
             serial_number = r_parts[3]
             match id:
                 case '4883:32817':
