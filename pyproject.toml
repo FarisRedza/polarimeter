@@ -5,3 +5,6 @@ dependencies = ["matplotlib","pyvisa-py"]
 
 [project.urls]
 "Homepage" = "https://github.com/FarisRedza/polarimeter"
+
+[tool.setuptools]
+packages = ["polarimeter"]
