@@ -488,7 +488,6 @@ def list_devices() -> list[SCPIDevice]:
                 id_1 = r_parts[1]
                 id_2 = r_parts[2]
             id = ':'.join([id_1, id_2])
-            print(id)
             serial_number = r_parts[3]
             match id:
                 case '4883:32817':
