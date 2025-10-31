@@ -1,4 +1,5 @@
 import sys
+import pathlib
 import os
 import signal
 import typing
@@ -9,9 +10,10 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw
 
-from . import gui_widget
-from . import thorlabs_polarimeter
-from . import remote_polarimeter
+sys.path.append(str(pathlib.Path.cwd()))
+from polarimeter import gui_widget
+from polarimeter import thorlabs_polarimeter
+from polarimeter import remote_polarimeter
 
 class DeviceListGroup(Adw.PreferencesGroup):
     def __init__(

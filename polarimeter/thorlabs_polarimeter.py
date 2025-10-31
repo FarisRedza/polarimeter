@@ -96,7 +96,7 @@ class SCPIDevice:
 
     def write(self, command: str) -> None:
         self._instrument.write(command)
-        
+
     def query(self, command: str) -> str:
         return str(self._instrument.query(command))
 
@@ -105,41 +105,41 @@ class SCPIDevice:
 
     def _standard_event_status_enable_command(self) -> None:
         self._instrument.write('*ESE')
-        
 
     def _standard_event_status_enable_query(self) -> str:
         return str(self._instrument.query('*ESE?'))
     
     def _standard_event_status_register_query(self) -> str:
         return str(self._instrument.query('*ESR?'))
-    
+
     def _identification_query(self) -> str:
         return str(self._instrument.query('*IDN?'))
-    
+
     def _operation_complete_command(self) -> None:
         self._instrument.write('*OPC')
-    
+
     def _operation_complete_query(self) -> str:
         return str(self._instrument.query('*OPC?'))
-    
+
     def _reset_command(self) -> None:
         self._instrument.write('*RST')
-        
+
     def _service_request_enable_command(self) -> None:
         self._instrument.write('*SRE')
 
     def _service_request_enable_query(self) -> str:
         return str(self._instrument.query('*SRE?'))
-    
+
     def _read_status_byte_query(self) -> str:
         return str(self._instrument.query('*STB?'))
-    
+
     def _self_test_query(self) -> str:
         return str(self._instrument.query('*TST?'))
-    
+
     def _wait_to_continue_command(self) -> None:
         self._instrument.write('*WAI')
 
+    # optional methods that some devices might use
     # def cal(self) -> str:
     #     return str(self._instrument.query('*CAL?')
 
@@ -229,7 +229,7 @@ class RawData:
             encode_string(self.dop) +
             encode_string(self.ptotal)
         )
-    
+
     @classmethod
     def deserialise(cls, payload: bytes) -> 'RawData':
         offset = 0
@@ -390,40 +390,40 @@ class Polarimeter(SCPIDevice):
             )
         else:
             return RawData()
-    
+
     def set_wavelength(self, wavelength: Metres) -> None:
         self._sense_correction_wavelength(wavelength=str(wavelength))
 
     def _system_error_next(self) -> str:
         return str(self._instrument.query('SYST:ERR:NEXT?'))
-    
+
     def _system_version(self) -> str:
         return str(self._instrument.query('SYST:VERS?'))
-    
+
     def _status_operation_event(self) -> str:
         return str(self._instrument.query('STAT:OPER:EVEN?'))
-    
+
     def _status_operation_condition(self) -> str:
         return str(self._instrument.query('STAT:OPER:COND?'))
-    
+
     def _status_operation_enable_query(self) -> str:
         return str(self._instrument.query('STAT:OPER:ENAB?'))
-    
+
     def _status_questionable_event(self) -> str:
         return str(self._instrument.query('STAT:QUES:EVEN?'))
-    
+
     def _status_questionable_condition(self) -> str:
         return str(self._instrument.query('STAT:QUES:COND?'))
-    
+
     def _status_questionable_enable_query(self) -> str:
         return str(self._instrument.query('STAT:QUES:ENAB?'))
-    
+
     def _status_auxiliary_event(self) -> str:
         return str(self._instrument.query('STAT:AUX:EVEN?'))
-    
+
     def _status_auxiliary_condition(self) -> str:
         return str(self._instrument.query('STAT:AUX:CON?'))
-    
+
     def _status_auxiliary_enable_query(self) -> str:
         return str(self._instrument.query('STAT:AUX:ENAB?'))
 
@@ -432,46 +432,46 @@ class Polarimeter(SCPIDevice):
 
     def _sense_calculate_mode_query(self) -> str:
         return str(self._instrument.query('SENS:CALC:MOD?'))
-    
+
     def _sense_correction_wavelength(self, wavelength: str) -> None:
         self._instrument.write(f'SENS:CORR:WAV {wavelength}')
-    
+
     def _sense_correction_wavelength_query(self) -> str:
         return str(self._instrument.query('SENS:CORR:WAV?'))
-    
+
     def _sense_power_range_upper(self, value: str) -> None:
         self._instrument.write(f'SENS:POW:RANG:UPP {value}')
-    
+
     def _sense_power_range_upper_query(self) -> str:
         return str(self._instrument.query('SENS:POW:RANG:UPP?'))
-    
+
     def _sense_power_range_auto(self, value: str) -> None:
         self._instrument.write(f'SENS:POW:RANG:AUTO {value}')
-    
+
     def _sense_power_range_auto_query(self) -> str:
         return str(self._instrument.query('SENS:POW:RANG:AUTO?'))
-    
+
     def _sense_power_range_index_query(self) -> str:
         return str(self._instrument.query('SENS:POW:RANG:IND?'))
-    
+
     def _sense_power_range_nominal_query(self) -> str:
         return str(self._instrument.query('SENS:POW:RANG:NOM?'))
-    
+
     def _sense_data_latest(self) -> str:
         return str(self._instrument.query('SENS:DATA:LAT?'))
 
     def _calibration_string(self) -> str:
         return str(self._instrument.query('CAL:STR?'))
-    
+
     def _input_rotation_state(self, state: str) -> None:
         self._instrument.write(f'INP:ROT:STAT {state}')
 
     def _input_rotation_state_query(self) -> str:
         return str(self._instrument.query('INP:ROT:STAT?'))
-    
+
     def _input_rotation_velocity_query(self) -> str:
         return str(self._instrument.query('INP:ROT:VEL?'))
-    
+
     def _input_rotation_velocity_limits(self) -> str:
         return str(self._instrument.query('INP:ROT:VEL:LIM?'))
 

@@ -1,8 +1,11 @@
+import sys
+import pathlib
 import socket
 import struct
 
-from . import thorlabs_polarimeter
-from . import remote_server
+sys.path.append(str(pathlib.Path.cwd()))
+from polarimeter import thorlabs_polarimeter
+from polarimeter import remote_server
 
 def send_command(
         sock: socket.socket,

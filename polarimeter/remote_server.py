@@ -1,9 +1,12 @@
+import sys
+import pathlib
 import socket
 import threading
 import struct
 import enum
 
-from . import thorlabs_polarimeter
+sys.path.append(str(pathlib.Path.cwd()))
+from polarimeter import thorlabs_polarimeter
 
 class Command(enum.IntEnum):
     LIST_DEVICES = 1
