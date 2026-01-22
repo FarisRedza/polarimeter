@@ -1,6 +1,8 @@
 # Polarimeter
-<img src='./data/screenshots/start_page.png' height='300'>
+<div align='center'>
+<img src='./data/screenshots/start_page.png' height='260'>
 <img src='./data/screenshots/device_page.png' height='300'>
+</div>
 
 Control Thorlabs polarimeters with a GUI. Supports both locally connected devices and remote devices with an included server script.
 
