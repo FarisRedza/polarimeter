@@ -8,7 +8,7 @@ import socket
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
+from gi.repository import Gtk, Adw, Gio
 
 sys.path.append(str(pathlib.Path.cwd()))
 from polarimeter import gui_widget
@@ -26,7 +26,7 @@ class DeviceListGroup(Adw.PreferencesGroup):
         super().__init__(title=title)
         self.set_device_callback = set_device_callback
         self.remote = remote
-        
+
         if len(devices_infos) == 0:
             no_devices_row = Adw.ActionRow(
                 child=Gtk.Label(
@@ -46,6 +46,8 @@ class DeviceListGroup(Adw.PreferencesGroup):
                 self.add(child=device_row)
                 connect_device_button = Gtk.Button(
                     label='Connect',
+                    icon_name='carousel-arrow-next-symbolic',
+                    css_classes=['flat'],
                     valign=Gtk.Align.CENTER
                 )
                 connect_device_button.connect(
@@ -108,8 +110,6 @@ class RemoteConnectionGroup(Adw.PreferencesGroup):
         )
 
         # connect
-        self.connect_row = Adw.ActionRow()
-        self.add(child=self.connect_row)
         connect_button = Gtk.Button(
             label='Connect',
             valign=Gtk.Align.CENTER
@@ -118,9 +118,7 @@ class RemoteConnectionGroup(Adw.PreferencesGroup):
             'clicked',
             self.on_server_connect
         )
-        self.connect_row.set_child(
-            child=connect_button
-        )
+        self.set_header_suffix(suffix=connect_button)
 
     def on_set_host(self, entry: Gtk.Entry) -> None:
         self.set_host_callback(host=entry.get_text())
@@ -165,6 +163,19 @@ class MainWindow(Adw.ApplicationWindow):
             transition_type=Gtk.StackTransitionType.CROSSFADE
         )
         main_box.append(child=self.main_stack)
+
+        # menu button
+        menu = Gio.Menu.new()
+        menu.append('Help', 'app.help')
+        menu.append('About', 'app.about')
+        popover = Gtk.PopoverMenu()
+        popover.set_menu_model(model=menu)
+
+        menu_button = Gtk.MenuButton(
+            icon_name='open-menu-symbolic',
+            popover=popover
+        )
+        header_bar.pack_end(child=menu_button)
 
         self.device_select_page = Adw.PreferencesPage()
         self.main_stack.add_child(child=self.device_select_page)
@@ -253,9 +264,52 @@ class App(Adw.Application):
         super().__init__(**kwargs)
         self.connect('activate', self.on_activate)
 
+        help_action = Gio.SimpleAction.new(
+            name='help',
+            parameter_type=None
+        )
+        help_action.connect('activate', self.on_help)
+        self.add_action(action=help_action)
+
+        about_action = Gio.SimpleAction.new(
+            name='about',
+            parameter_type=None
+        )
+        about_action.connect('activate', self.on_about)
+        self.add_action(action=about_action)
+
+
     def on_activate(self, app: Adw.Application):
         self.win = MainWindow(application=app)
         self.win.present()
+
+    def on_help(self, action: Gio.SimpleAction, param: None) -> None:
+        help_dialog = Gtk.MessageDialog(
+            transient_for=self.get_active_window(),
+            modal=True,
+            visible=True,
+            buttons=Gtk.ButtonsType.OK,
+            text='Help',
+            secondary_text='Select a polarimeter from "Local Devices" or connect to a remote polarimeter server using "Remote Connection".'
+        )
+        help_dialog.connect(
+            'response',
+            lambda dialog, response: dialog.destroy()
+        )
+
+    def on_about(self, action: Gio.SimpleAction, param: None) -> None:
+        about_dialog = Gtk.AboutDialog(
+            transient_for=self.get_active_window(),
+            modal=True,
+            visible=True,
+            program_name='Polarimeter Viewer',
+            version='0.1',
+            logo_icon_name='display-brightness-symbolic',
+            website='https://github.com/FarisRedza/polarimeter',
+            website_label='GitHub',
+            authors=['Faris Redza']
+        )
+
 
 if __name__ == '__main__':
     app = App(application_id='com.github.FarisRedza.PolarisationViewer')
